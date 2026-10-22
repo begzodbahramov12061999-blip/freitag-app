@@ -11,10 +11,11 @@ function layoutApp(){
  const sessions=(db.sessions||[]).filter(x=>teacher||x.studentId===studentId).filter(x=>Date.parse(x.when+':00+04:00')>=Date.now()).sort((a,b)=>a.when.localeCompare(b.when));
  const tasks=(db.homework||[]).filter(x=>teacher||x.studentId===studentId).filter(x=>!x.done);
  const lesson=sessions[0];
- homeView.hidden=!['home','people','homework','settings','notifications'].includes(page)||(page==='people'&&teacher)||(['settings','notifications'].includes(page)&&teacher);
- if(page==='home')homeView.innerHTML=`<div class="panel dashboard"><span class="sub">${teacher?'ТВОЙ УЧЕБНЫЙ ДЕНЬ':'СЕГОДНЯ С FREITAG'}</span><h2>${teacher?'Всё важное — рядом':'Твой следующий шаг'}</h2><button class="dashboard-card" data-go="schedule"><span class="sub">БЛИЖАЙШЕЕ ЗАНЯТИЕ</span><strong>${lesson?escapeHtml(lesson.title):'Пока нет занятий'}</strong><span>${lesson?escapeHtml(dateLabel(lesson.when))+' · Тбилиси':'Посмотреть расписание →'}</span></button><div class="dashboard-grid"><button class="dashboard-card" data-go="homework"><strong>${tasks.length}</strong><span>Домашних заданий к выполнению →</span></button><button class="dashboard-card" data-go="${teacher?'people':'learning'}"><strong>${teacher?(db.joinRequests||[]).length:assigned[0]?.topics.length||0}</strong><span>${teacher?'Новых заявок →':'Назначенных тем →'}</span></button></div><button class="btn primary" data-go="learning">${teacher?'Подготовить материалы':'Перейти к темам'} →</button></div>`;
+ homeView.hidden=!['home','people','homework','settings','notifications'].includes(page)||(page==='people'&&teacher)||(page==='notifications'&&teacher);
+ if(page==='home')homeView.innerHTML=`<div class="panel dashboard"><span class="sub">${teacher?'ТВОЙ УЧЕБНЫЙ ДЕНЬ':'СЕГОДНЯ С FREITAG'}</span><h2>${teacher?'Всё важное — рядом':'Твой следующий шаг'}</h2><button class="dashboard-card" data-go="schedule"><span class="sub">БЛИЖАЙШЕЕ ЗАНЯТИЕ</span><strong>${lesson?escapeHtml(lesson.title):'Пока нет занятий'}</strong><span>${lesson?escapeHtml(dateLabel(localLessonTime(lesson.when)))+' · '+zoneLabel():'Посмотреть расписание →'}</span></button><div class="dashboard-grid"><button class="dashboard-card" data-go="homework"><strong>${tasks.length}</strong><span>Домашних заданий к выполнению →</span></button><button class="dashboard-card" data-go="${teacher?'people':'learning'}"><strong>${teacher?(db.joinRequests||[]).length:assigned[0]?.topics.length||0}</strong><span>${teacher?'Новых заявок →':'Назначенных тем →'}</span></button></div><button class="btn primary" data-go="learning">${teacher?'Подготовить материалы':'Перейти к темам'} →</button></div>`;
  if(page==='people'&&!teacher){const p=Object.entries(db.progress||{}).filter(([k])=>k.startsWith(studentId+':'));homeView.innerHTML=`<div class="panel"><h2>Мой кабинет</h2><p>${escapeHtml(assigned[0]?.name||'Ученик')}</p><div class="dashboard-grid"><div class="dashboard-card"><strong>${p.reduce((n,[,v])=>n+(v.known?.length||0),0)}</strong><span>Изученных слов</span></div><div class="dashboard-card"><strong>${p.reduce((n,[,v])=>n+(v.best||0),0)}</strong><span>Баллов в темах</span></div></div><button class="btn" data-go="homework">Мои домашние задания →</button></div>`;}
  if(['settings','notifications'].includes(page)&&!teacher)homeView.innerHTML='<div class="panel"><h2>Уведомления</h2><p>Напоминания о занятиях и домашней работе будут приходить в чат с ботом. Время и количество напоминаний настраивает преподаватель.</p><p class="hint">Автоматическая отправка пока не подключена.</p></div>';
+ if(page==='settings')homeView.innerHTML=timeZoneSettingsMarkup();
  if(page==='homework')homeView.innerHTML='<div class="row page-heading"><h2>Домашние задания</h2><button class="btn" data-go="home">← Главная</button></div>';
  const classVisible=page==='learning'||page==='people'&&teacher||page==='home'&&!cloud;
  classroom.hidden=!classVisible;
@@ -22,10 +23,12 @@ function layoutApp(){
  const lessonNav=document.querySelector('nav[aria-label="Разделы"]');if(page!=='learning'||teacher)lessonNav.hidden=true;
  else lessonNav.hidden=!topic||!lessonOpen;
  content.hidden=page!=='learning'||teacher;
- planner.hidden=!['schedule','homework','settings','notifications'].includes(page);
+ planner.hidden=!['schedule','homework','notifications'].includes(page);
  const details=[...planner.children];for(const d of details){const heading=d.querySelector('summary')?.textContent||'';d.hidden=['settings','notifications'].includes(page)?!heading.includes('Настройки'):page==='schedule'?!heading.includes('Расписание'):page==='homework'?!heading.includes('Домашние'):true;if(!d.hidden)d.open=true;}
 }
 appMenu.addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b)openPage(b.dataset.page);});homeView.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)openPage(b.dataset.go);});
 const originalRender=render;render=function(){originalRender();layoutApp();};
 const originalPlanner=renderPlanner;renderPlanner=function(){originalPlanner();queueMicrotask(layoutApp);};
 layoutApp();
+
+homeView.addEventListener('change',e=>{if(e.target.id!=='user-timezone'||!validTimeZone(e.target.value))return;userTimeZone=e.target.value;try{localStorage.setItem('freitag-timezone',userTimeZone);}catch{}selectedCalendarDate=tbilisiDate();calendarWeek=mondayOf(selectedCalendarDate);render();});
