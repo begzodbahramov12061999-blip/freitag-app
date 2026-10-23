@@ -127,7 +127,7 @@ async function checkTelegramLogin(){
     }
     title.textContent='✓ Вход через Telegram подтверждён';
     status.textContent=result.user.first_name?'Привет, '+result.user.first_name+'!':'Ты вошёл в Freitag.';
-    const note=document.createElement('p');note.className='hint';note.textContent='Первый этап подключения готов. Общая база и права преподавателя пока не подключены; ниже по-прежнему локальная демоверсия.';loginPanel.append(note);await connectCloud();
+    const note=document.createElement('p');note.className='hint';note.textContent='Первый этап подключения готов. Общая база и права преподавателя пока не подключены; ниже по-прежнему локальная демоверсия.';loginPanel.append(note);if(document.readyState==='loading')await new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true}));await connectCloud();
   }catch(error){
     status.textContent=error instanceof Error&&error.name!=='TimeoutError'&&error.name!=='TypeError'?error.message:'Сервер пока недоступен. Проверь подключение и повтори попытку.';
     const retry=document.createElement('button');retry.className='btn';retry.textContent='Проверить ещё раз';retry.addEventListener('click',checkTelegramLogin);loginPanel.append(retry);
