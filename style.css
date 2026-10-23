@@ -48,3 +48,10 @@ header .settings-button{margin-left:auto}
 .score-inputs{display:grid;grid-template-columns:1fr 1fr;gap:12px}.score-inputs input{font-size:20px!important;font-variant-numeric:tabular-nums}@media(max-width:380px){.score-inputs{grid-template-columns:1fr}}
 
 .invite-confirm h2{font-size:32px;margin:20px 0}.invite-confirm .primary{width:100%;margin-top:20px}.live-invitation .actions{gap:10px}.live-invitation .btn{font-size:14px}
+
+/* Keep all five navigation labels inside their buttons on mobile. */
+.app-menu{gap:2px;box-sizing:border-box;padding:6px 4px}
+.app-menu button{box-sizing:border-box;max-width:100%;padding:9px 0;font-size:clamp(8px,2.35vw,12px);letter-spacing:-.15px;line-height:1.35;overflow-wrap:anywhere}
+.app-menu .menu-label{display:block;min-width:0;max-width:100%}
+
+.app-menu .menu-label{font-size:inherit;line-height:inherit}
