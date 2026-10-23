@@ -105,13 +105,13 @@ content.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)re
 try{const tg=window.Telegram?.WebApp;if(tg?.initData){tg.ready();tg.expand();document.querySelector('#environment').textContent='В Telegram';}}catch{}loadLesson();render();
 
 const loginPanel=document.createElement('section');
-loginPanel.className='panel telegram-login';
+loginPanel.className='panel telegram-login';loginPanel.hidden=true;
 document.querySelector('header').after(loginPanel);
 let loginBusy=false;
 async function checkTelegramLogin(){
   if(loginBusy)return;
   const initData=window.Telegram?.WebApp?.initData;
-  loginPanel.replaceChildren();
+  loginPanel.hidden=true;loginPanel.classList.remove('cloud-alert');loginPanel.replaceChildren();
   const title=document.createElement('strong');title.textContent='Подключение Telegram';loginPanel.append(title);
   const status=document.createElement('p');status.setAttribute('role','status');loginPanel.append(status);
   if(!initData){status.textContent='Для проверки входа открой Freitag кнопкой в Telegram. В браузере доступна локальная демоверсия.';return;}
@@ -130,6 +130,7 @@ async function checkTelegramLogin(){
     status.textContent=result.user.first_name?'Привет, '+result.user.first_name+'!':'Ты вошёл в Freitag.';
     const note=document.createElement('p');note.className='hint';note.textContent='Первый этап подключения готов. Общая база и права преподавателя пока не подключены; ниже по-прежнему локальная демоверсия.';loginPanel.append(note);if(document.readyState==='loading')await new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true}));await connectCloud();
   }catch(error){
+    loginPanel.hidden=false;title.textContent='Не удалось открыть приложение';
     status.textContent=error instanceof Error&&error.name!=='TimeoutError'&&error.name!=='TypeError'?error.message:'Сервер пока недоступен. Проверь подключение и повтори попытку.';
     const retry=document.createElement('button');retry.className='btn';retry.textContent='Проверить ещё раз';retry.addEventListener('click',checkTelegramLogin);loginPanel.append(retry);
   }finally{loginBusy=false;}
@@ -140,7 +141,7 @@ async function api(action,extra={}){
  const response=await fetch('https://xcqudakkyptixhxtjmqq.supabase.co/functions/v1/freitag-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.Telegram.WebApp.initData,action,...extra}),signal:AbortSignal.timeout(20000)});
  const result=await response.json();if(!response.ok||!result.ok)throw new Error(result.error||'Ошибка сервера');return result;
 }
-function cloudStatus(text){let p=loginPanel.querySelector('.cloud-status');if(!p){p=document.createElement('p');p.className='cloud-status';p.setAttribute('role','status');loginPanel.append(p);}p.textContent=text;}
+function cloudStatus(text){const routine=['Общая база подключена. Изменения сохраняются на сервере.','Сохранено в общей базе.','Сохраняем…','Приглашение принято. Кабинет подключён.','Материалы перенесены в общую базу.'];loginPanel.hidden=routine.includes(text);loginPanel.classList.toggle('cloud-alert',!loginPanel.hidden&&text!=='База пока пуста.');let p=loginPanel.querySelector('.cloud-status');if(!p){p=document.createElement('p');p.className='cloud-status';p.setAttribute('role','status');loginPanel.append(p);}p.textContent=text;}
 function applyCloudData(data){
  db={students:[],progress:{},customLessons:{},extraCards:{},extraExercises:{},notes:{},sessions:[],homework:[],...data};
  for(const k of Object.keys(lessons))delete lessons[k];Object.assign(lessons,JSON.parse(JSON.stringify(baseLessons)),db.customLessons);
